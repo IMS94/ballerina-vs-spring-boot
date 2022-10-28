@@ -19,13 +19,15 @@ public type Country record {
 }
 service / on new http:Listener(8080) {
 
-    resource function get country/[int callingCode]() returns string|error {
+    resource function get country/[int callingCode]() returns string[]|http:BadRequest|error {
         http:Client restCountriesEp = check new ("https://restcountries.com");
         Country[] countries = check restCountriesEp->get("/v2/callingcode/" + callingCode.toString());
         if countries.length() == 0 {
-            return "Invalid Calling Code";
+            return <http:BadRequest>{body: "Invalid calling code"};
         }
 
-        return countries[0].name;
+        string[] countryNames = from var country in countries
+            select country.name;
+        return countryNames;
     }
 }
